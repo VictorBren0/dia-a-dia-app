@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "258766719441",
+    "project_id": "dia-a-dia-app",
+    "storage_bucket": "dia-a-dia-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258766719441:android:e4973093c3556b96c1f8f0",
+        "android_client_info": {
+          "package_name": "dev.victorbreno.diaadia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAS58ce6JEPJJuUZZGoYpt5xgZSioofWVc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

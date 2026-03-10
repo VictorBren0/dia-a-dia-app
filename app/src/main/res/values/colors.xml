@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="colorPrimary">#6B2D45</color>
+    <color name="colorPrimaryDark">#4A1A2E</color>
+    <color name="colorAccent">#9A4260</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="journalBackground">#F8ECEF</color>
+    <color name="journalSurface">#FFFAFC</color>
+    <color name="journalCard">#FFF5F8</color>
+    <color name="journalHighlight">#DDBCCC</color>
+    <color name="journalAccentLight">#F1DFE5</color>
+    <color name="journalInk">#2A1820</color>
+    <color name="journalMuted">#7A5666</color>
+    <color name="journalOutline">#D8BCC8</color>
+    <color name="journalDivider">#EACCD8</color>
+    <color name="journalIconBg">#EDD0DB</color>
+</resources>
