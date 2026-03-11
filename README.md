@@ -14,16 +14,16 @@ O aplicativo foi pensado como um diário pessoal simples, com fluxo direto e int
 
 ## Funcionalidades Implementadas
 
-:heavy_check_mark: Cadastro com e-mail e senha
-:heavy_check_mark: Login com e-mail e senha
-:heavy_check_mark: Login e cadastro com Google
-:heavy_check_mark: Recuperação de senha por e-mail
-:heavy_check_mark: Persistência de perfil no Firebase Realtime Database
-:heavy_check_mark: Criação e listagem de reflexões pessoais
-:heavy_check_mark: Cache local de sessão, perfil e reflexões
-:heavy_check_mark: Leitura offline dos dados salvos no dispositivo
-:heavy_check_mark: Edição de perfil
-:heavy_check_mark: Interface Android nativa com Material Design e ViewBinding
+:heavy_check_mark: Cadastro com e-mail e senha\
+:heavy_check_mark: Login com e-mail e senha\
+:heavy_check_mark: Login e cadastro com Google\
+:heavy_check_mark: Recuperação de senha por e-mail\
+:heavy_check_mark: Persistência de perfil no Firebase Realtime Database\
+:heavy_check_mark: Criação e listagem de reflexões pessoais\
+:heavy_check_mark: Cache local de sessão, perfil e reflexões\
+:heavy_check_mark: Leitura offline dos dados salvos no dispositivo\
+:heavy_check_mark: Edição de perfil\
+:heavy_check_mark: Interface Android nativa com Material Design e ViewBinding\
 
 ## Telas Principais
 
