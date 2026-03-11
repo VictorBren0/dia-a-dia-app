@@ -39,6 +39,7 @@
     <string name="home_summary_title">Resumo do seu perfil</string>
     <string name="home_focus_title">Foco do dia</string>
     <string name="home_reflection_title">Reflexão registrada</string>
+    <string name="home_reflections_title">Reflexões registradas</string>
     <string name="home_email_label">E-mail</string>
     <string name="home_phone_label">Celular</string>
     <string name="edit_profile_button">Criar Reflexão</string>
@@ -49,11 +50,19 @@
     <string name="save_profile">Salvar perfil</string>
     <string name="message_profile_saved">Perfil salvo com sucesso.</string>
     <string name="message_profile_load_error">Não foi possível carregar os dados do perfil.</string>
+    <string name="message_profile_loaded_from_device">Sem conexão com a nuvem. Exibindo dados salvos no aparelho.</string>
     <string name="message_profile_save_error">Não foi possível salvar o perfil.</string>
     <string name="message_register_success">Conta criada com sucesso.</string>
     <string name="message_register_error">Não foi possível concluir o cadastro.</string>
     <string name="message_user_not_authenticated">Usuário não autenticado.</string>
     <string name="message_invalid_email_for_reset">Informe um e-mail válido para recuperar a senha.</string>
+    <string name="google_sign_in">Entrar com Google</string>
+    <string name="google_sign_up">Cadastrar com Google</string>
+    <string name="message_google_sign_in_success">Login com Google realizado com sucesso.</string>
+    <string name="message_google_sign_in_cancelled">Login com Google cancelado.</string>
+    <string name="message_google_sign_in_error">Não foi possível autenticar com o Google.</string>
+    <string name="message_google_config_missing">Configuração do Google ausente. Atualize o google-services.json após cadastrar o SHA-1 no Firebase.</string>
+    <string name="message_reflection_saved_locally">Reflexão salva localmente. A sincronização online falhou.</string>
     <string name="firebase_database_users_path">users</string>
     <string name="env_support_email">suporte@diaadia.app</string>
     <string name="env_default_focus">Respirar, organizar as ideias e seguir em frente.</string>

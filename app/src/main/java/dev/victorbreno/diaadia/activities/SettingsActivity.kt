@@ -15,6 +15,7 @@ import com.google.android.material.textfield.TextInputEditText
 import dev.victorbreno.diaadia.R
 import dev.victorbreno.diaadia.data.DiaryProfile
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
+import dev.victorbreno.diaadia.services.LocalStorageService
 
 class SettingsActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseConfiguration.getFirebaseAuth()
@@ -71,10 +72,13 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
 
+        view.isEnabled = false
+
         val name = nameInput.text?.toString()?.trim().orEmpty()
 
         if (name.isBlank()) {
             nameInput.error = getString(R.string.error_name_required)
+            view.isEnabled = true
             return
         }
 
@@ -87,11 +91,14 @@ class SettingsActivity : AppCompatActivity() {
         val usersPath = getString(R.string.firebase_database_users_path)
         firebaseDatabase.child(usersPath).child(currentUser.uid).setValue(profile)
             .addOnSuccessListener {
+                view.isEnabled = true
+                LocalStorageService.saveProfile(this, profile)
                 Toast.makeText(this, getString(R.string.message_profile_saved), Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }
             .addOnFailureListener {
+                view.isEnabled = true
                 Toast.makeText(this, getString(R.string.message_profile_save_error), Toast.LENGTH_SHORT).show()
             }
     }
@@ -106,11 +113,20 @@ class SettingsActivity : AppCompatActivity() {
                 val profile = snapshot.getValue(DiaryProfile::class.java)
                 if (profile != null) {
                     currentProfile = profile
+                    LocalStorageService.saveProfile(this, profile)
                 }
                 nameInput.setText(profile?.displayName ?: currentUser.displayName.orEmpty())
             }
             .addOnFailureListener {
-                Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()
+                val cachedProfile = LocalStorageService.getProfile(this, currentUser.uid)
+                if (cachedProfile != null) {
+                    currentProfile = cachedProfile
+                    emailText.text = cachedProfile.email.ifBlank { currentUser.email.orEmpty() }
+                    nameInput.setText(cachedProfile.displayName)
+                    Toast.makeText(this, getString(R.string.message_profile_loaded_from_device), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()
+                }
             }
     }
 

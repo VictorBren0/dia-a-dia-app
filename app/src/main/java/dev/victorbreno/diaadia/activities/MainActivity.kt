@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -14,7 +15,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import dev.victorbreno.diaadia.R
 import dev.victorbreno.diaadia.data.DiaryProfile
+import dev.victorbreno.diaadia.data.ReflectionEntry
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
+import dev.victorbreno.diaadia.services.GoogleAuthHelper
+import dev.victorbreno.diaadia.services.LocalStorageService
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,9 +28,8 @@ class MainActivity : AppCompatActivity() {
     private val firebaseDatabase = FirebaseConfiguration.getFirebaseDatabase()
     private lateinit var greetingText: TextView
     private lateinit var dateText: TextView
-    private lateinit var reflectionText: TextView
-    private lateinit var reflectionDateText: TextView
-    private var isExpanded = false
+    private lateinit var reflectionListLayout: LinearLayout
+    private lateinit var reflectionTitleText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,20 +47,28 @@ class MainActivity : AppCompatActivity() {
 
         greetingText = findViewById(R.id.textGreeting)
         dateText = findViewById(R.id.textDate)
-        reflectionText = findViewById(R.id.textReflectionValue)
-        reflectionDateText = findViewById(R.id.textReflectionDate)
+        reflectionListLayout = findViewById(R.id.layoutReflectionList)
+        reflectionTitleText = findViewById(R.id.textReflectionDate)
+        reflectionTitleText.text = getString(R.string.home_reflections_title)
 
-        val dateFormat = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale("pt", "BR"))
+        val dateFormat = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
         dateText.text = dateFormat.format(Date())
     }
 
     override fun onStart() {
         super.onStart()
-        if (firebaseAuth.currentUser == null) {
+        val currentUser = firebaseAuth.currentUser
+        if (currentUser == null) {
             goToLogin()
             return
         }
 
+        LocalStorageService.saveUserSession(
+            this,
+            currentUser.uid,
+            currentUser.displayName.orEmpty(),
+            currentUser.email.orEmpty()
+        )
         loadProfile()
     }
 
@@ -82,6 +93,8 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.logoutMenu -> {
                 firebaseAuth.signOut()
+                GoogleAuthHelper.signOut(this)
+                LocalStorageService.clearUserSession(this)
                 goToLogin()
                 true
             }
@@ -90,17 +103,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun goToReflectionEditor(view: View) {
+        view.isEnabled = false
         startActivity(Intent(this, ReflectionActivity::class.java))
-    }
-
-    fun toggleReflection(view: View) {
-        if (isExpanded) {
-            reflectionText.maxLines = 4
-            isExpanded = false
-        } else {
-            reflectionText.maxLines = Integer.MAX_VALUE
-            isExpanded = true
-        }
+        view.post { view.isEnabled = true }
     }
 
     private fun loadProfile() {
@@ -115,24 +120,154 @@ class MainActivity : AppCompatActivity() {
         firebaseDatabase.child(usersPath).child(currentUser.uid).get()
             .addOnSuccessListener { snapshot ->
                 val profile = snapshot.getValue(DiaryProfile::class.java)
-                val displayName = profile?.displayName?.takeIf { it.isNotBlank() }
+                val resolvedProfile = profile ?: DiaryProfile(
+                    uid = currentUser.uid,
+                    displayName = currentUser.displayName.orEmpty(),
+                    email = currentUser.email.orEmpty(),
+                    todayFocus = getString(R.string.env_default_focus),
+                    dailyReflection = getString(R.string.env_default_reflection)
+                )
+                val displayName = resolvedProfile.displayName.takeIf { it.isNotBlank() }
                     ?: currentUser.displayName
                     ?: getString(R.string.home_empty_name)
+                val remoteReflectionEntries = snapshot.child("reflections").children
+                    .mapNotNull { child ->
+                        val entry = child.getValue(ReflectionEntry::class.java) ?: return@mapNotNull null
+                        val text = entry.text.ifBlank { child.child("text").getValue(String::class.java).orEmpty() }
+                        if (text.isBlank()) {
+                            return@mapNotNull null
+                        }
+
+                        entry.copy(
+                            id = entry.id.ifBlank { child.key.orEmpty() },
+                            text = text,
+                            createdAt = entry.createdAt.takeIf { it > 0L }
+                                ?: child.child("createdAt").getValue(Long::class.java)
+                                ?: 0L,
+                            formattedDate = entry.formattedDate.ifBlank {
+                                child.child("formattedDate").getValue(String::class.java).orEmpty()
+                            }
+                        )
+                    }
+                val cachedReflectionEntries = LocalStorageService.getReflections(this, currentUser.uid)
+                val reflectionEntries = (remoteReflectionEntries + cachedReflectionEntries)
+                    .distinctBy { entry -> entry.id.ifBlank { "${entry.createdAt}-${entry.text}" } }
+                    .sortedByDescending { it.createdAt }
+
+                LocalStorageService.saveProfile(this, resolvedProfile)
+                LocalStorageService.saveReflections(this, currentUser.uid, reflectionEntries)
 
                 greetingText.text = getString(R.string.home_greeting, displayName)
-                reflectionText.text = profile?.dailyReflection?.takeIf { it.isNotBlank() }
-                    ?: getString(R.string.env_default_reflection)
-                
-                val dateStr = profile?.reflectionDate?.takeIf { !it.isNullOrBlank() }
-                if (dateStr != null) {
-                    reflectionDateText.text = "Reflexão do dia $dateStr"
+                if (reflectionEntries.isNotEmpty()) {
+                    showReflectionEntries(reflectionEntries)
                 } else {
-                    reflectionDateText.text = getString(R.string.home_reflection_title)
+                    val legacyText = resolvedProfile.dailyReflection.takeIf { it.isNotBlank() }
+                    val legacyDate = resolvedProfile.reflectionDate.takeIf { it.isNotBlank() }.orEmpty()
+                    showLegacyReflection(legacyText, legacyDate)
                 }
             }
             .addOnFailureListener {
-                Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()
+                val cachedProfile = LocalStorageService.getProfile(this, currentUser.uid)
+                val cachedReflections = LocalStorageService.getReflections(this, currentUser.uid)
+
+                if (cachedProfile != null || cachedReflections.isNotEmpty()) {
+                    val displayName = cachedProfile?.displayName?.takeIf { it.isNotBlank() }
+                        ?: currentUser.displayName
+                        ?: getString(R.string.home_empty_name)
+
+                    greetingText.text = getString(R.string.home_greeting, displayName)
+                    if (cachedReflections.isNotEmpty()) {
+                        showReflectionEntries(cachedReflections.sortedByDescending { entry -> entry.createdAt })
+                    } else {
+                        showLegacyReflection(
+                            cachedProfile?.dailyReflection,
+                            cachedProfile?.reflectionDate.orEmpty()
+                        )
+                    }
+
+                    Toast.makeText(this, getString(R.string.message_profile_loaded_from_device), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()
+                }
             }
+    }
+
+    private fun showReflectionEntries(entries: List<ReflectionEntry>) {
+        reflectionListLayout.removeAllViews()
+        entries.forEachIndexed { index, entry ->
+            val itemView = createReflectionItem(entry.formattedDate, entry.text)
+            reflectionListLayout.addView(itemView)
+
+            if (index < entries.lastIndex) {
+                reflectionListLayout.addView(createReflectionDivider())
+            }
+        }
+    }
+
+    private fun showLegacyReflection(text: String?, date: String) {
+        reflectionListLayout.removeAllViews()
+        val content = text ?: getString(R.string.env_default_reflection)
+        reflectionListLayout.addView(createReflectionItem(date, content))
+    }
+
+    private fun createReflectionItem(date: String, content: String): LinearLayout {
+        val context = this
+        val container = LinearLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            orientation = LinearLayout.VERTICAL
+        }
+
+        if (date.isNotBlank()) {
+            val dateView = TextView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                text = date
+                textSize = 12f
+                setTextColor(getColor(R.color.journalMuted))
+            }
+            container.addView(dateView)
+        }
+
+        val contentView = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { params ->
+                if (date.isNotBlank()) {
+                    params.topMargin = dpToPx(6)
+                }
+            }
+            text = content
+            textSize = 15f
+            setLineSpacing(dpToPx(6).toFloat(), 1f)
+            setTextColor(getColor(R.color.journalInk))
+            typeface = android.graphics.Typeface.SERIF
+        }
+        container.addView(contentView)
+
+        return container
+    }
+
+    private fun createReflectionDivider(): View {
+        return View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(1)
+            ).also { params ->
+                params.topMargin = dpToPx(14)
+                params.bottomMargin = dpToPx(14)
+            }
+            setBackgroundColor(getColor(R.color.journalDivider))
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
 
     private fun goToLogin() {

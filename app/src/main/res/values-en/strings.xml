@@ -40,6 +40,7 @@
     <string name="home_summary_title">Your profile summary</string>
     <string name="home_focus_title">Focus of the day</string>
     <string name="home_reflection_title">Saved reflection</string>
+    <string name="home_reflections_title">Saved reflections</string>
     <string name="home_email_label">E-mail</string>
     <string name="home_phone_label">Phone</string>
     <string name="edit_profile_button">Create Reflection</string>

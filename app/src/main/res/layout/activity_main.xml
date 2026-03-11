@@ -69,17 +69,17 @@
                     android:textSize="13sp"
                     tools:text="terça-feira, 10 de março de 2026" />
 
-                <!-- Botão editar perfil -> Agora Criar Reflexão -->
+                <!-- Botão Criar Reflexão -->
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:backgroundTint="@color/colorAccent"
+                    android:backgroundTint="@color/white"
                     android:onClick="goToReflectionEditor"
                     android:paddingStart="20dp"
                     android:paddingEnd="20dp"
                     android:text="@string/edit_profile_button"
-                    android:textColor="@color/white"
+                    android:textColor="@color/colorPrimary"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -97,10 +97,7 @@
                     android:layout_marginTop="16dp"
                     android:background="@drawable/bg_surface_card"
                     android:orientation="vertical"
-                    android:padding="20dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:onClick="toggleReflection">
+                    android:padding="20dp">
 
                     <!-- Linha título + ícone -->
                     <LinearLayout
@@ -129,7 +126,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="12dp"
                             android:layout_weight="1"
-                            android:text="@string/home_reflection_title"
+                            android:text="@string/home_reflections_title"
                             android:textColor="@color/journalInk"
                             android:textSize="17sp"
                             android:textStyle="bold" />
@@ -144,17 +141,23 @@
                         android:background="@color/journalDivider" />
 
                     <!-- Conteúdo da reflexão -->
-                    <TextView
-                        android:id="@+id/textReflectionValue"
+                    <LinearLayout
+                        android:id="@+id/layoutReflectionList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:lineSpacingExtra="6dp"
-                        android:textColor="@color/journalInk"
-                        android:textSize="15sp"
-                        android:fontFamily="serif"
-                        android:maxLines="4"
-                        android:ellipsize="end"
-                        tools:text="Hoje organizei minhas metas e deixei registrado o que quero melhorar." />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textReflectionValue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="serif"
+                            android:lineSpacingExtra="6dp"
+                            android:text="@string/env_default_reflection"
+                            android:textColor="@color/journalInk"
+                            android:textSize="15sp"
+                            tools:text="Hoje organizei minhas metas e deixei registrado o que quero melhorar." />
+                    </LinearLayout>
                 </LinearLayout>
 
             </LinearLayout>
