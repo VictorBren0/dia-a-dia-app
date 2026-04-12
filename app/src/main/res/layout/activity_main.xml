@@ -10,157 +10,169 @@
 
     <include layout="@layout/toolbar" />
 
-    <ScrollView
+    <!-- ===== Cabeçalho / Hero ===== -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_auth_gradient"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="28dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="32dp">
 
+        <!-- Badge do app -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_home_highlight"
+            android:paddingStart="14dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp"
+            android:text="@string/app_name"
+            android:textColor="@color/journalInk"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="serif"
+            android:letterSpacing="0.08" />
+
+        <!-- Saudação -->
+        <TextView
+            android:id="@+id/textGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:textColor="@color/white"
+            android:textSize="30sp"
+            android:fontFamily="serif"
+            android:textStyle="bold"
+            tools:text="Olá, Victor" />
+
+        <!-- Data -->
+        <TextView
+            android:id="@+id/textDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/journalHighlight"
+            android:textSize="13sp"
+            tools:text="terça-feira, 10 de março de 2026" />
+
+        <!-- Botão Criar Reflexão -->
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/white"
+            android:onClick="goToReflectionEditor"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:text="@string/edit_profile_button"
+            android:textColor="@color/colorPrimary"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- ===== Card frase do dia (API) ===== -->
+    <LinearLayout
+        android:id="@+id/cardQuote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_surface_card"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/home_quote_title"
+            android:textColor="@color/journalMuted"
+            android:textSize="11sp"
+            android:textAllCaps="true"
+            android:letterSpacing="0.08" />
+
+        <TextView
+            android:id="@+id/textQuote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="serif"
+            android:textColor="@color/journalInk"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:lineSpacingExtra="4dp" />
+
+        <TextView
+            android:id="@+id/textQuoteAuthor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="end"
+            android:textColor="@color/journalMuted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- ===== Área de conteúdo com RecyclerView ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Título da seção -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
 
-            <!-- ===== Cabeçalho / Hero ===== -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_auth_gradient"
-                android:orientation="vertical"
-                android:paddingStart="24dp"
-                android:paddingTop="28dp"
-                android:paddingEnd="24dp"
-                android:paddingBottom="32dp">
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_icon_circle"
+                android:gravity="center"
+                android:orientation="vertical">
 
-                <!-- Badge do app -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_home_highlight"
-                    android:paddingStart="14dp"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/app_name"
-                    android:textColor="@color/journalInk"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="serif"
-                    android:letterSpacing="0.08" />
-
-                <!-- Saudação -->
-                <TextView
-                    android:id="@+id/textGreeting"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:textColor="@color/white"
-                    android:textSize="30sp"
-                    android:fontFamily="serif"
-                    android:textStyle="bold"
-                    tools:text="Olá, Victor" />
-
-                <!-- Data exibida no MainActivity -->
-                <TextView
-                    android:id="@+id/textDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/journalHighlight"
-                    android:textSize="13sp"
-                    tools:text="terça-feira, 10 de março de 2026" />
-
-                <!-- Botão Criar Reflexão -->
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:backgroundTint="@color/white"
-                    android:onClick="goToReflectionEditor"
-                    android:paddingStart="20dp"
-                    android:paddingEnd="20dp"
-                    android:text="@string/edit_profile_button"
-                    android:textColor="@color/colorPrimary"
-                    android:textSize="13sp" />
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_pencil_24"
+                    android:contentDescription="@null" />
             </LinearLayout>
 
-            <!-- ===== Área de conteúdo ===== -->
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/textReflectionDate"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <!-- Card: Reflexão do dia -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="@drawable/bg_surface_card"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <!-- Linha título + ícone -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="@drawable/bg_icon_circle"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_pencil_24"
-                                android:contentDescription="@null" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/textReflectionDate"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="@string/home_reflections_title"
-                            android:textColor="@color/journalInk"
-                            android:textSize="17sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Divisor interno -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="14dp"
-                        android:layout_marginBottom="14dp"
-                        android:background="@color/journalDivider" />
-
-                    <!-- Conteúdo da reflexão -->
-                    <LinearLayout
-                        android:id="@+id/layoutReflectionList"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/textReflectionValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="serif"
-                            android:lineSpacingExtra="6dp"
-                            android:text="@string/env_default_reflection"
-                            android:textColor="@color/journalInk"
-                            android:textSize="15sp"
-                            tools:text="Hoje organizei minhas metas e deixei registrado o que quero melhorar." />
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/home_reflections_title"
+                android:textColor="@color/journalInk"
+                android:textSize="17sp"
+                android:textStyle="bold" />
         </LinearLayout>
-    </ScrollView>
+
+        <!-- Fragment lista de reflexões -->
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragmentReflectionList"
+            android:name="dev.victorbreno.diaadia.fragments.ReflectionListFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <!-- Banner AdMob -->
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adViewBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 </LinearLayout>

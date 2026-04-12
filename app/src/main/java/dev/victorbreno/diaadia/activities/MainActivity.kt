@@ -1,6 +1,9 @@
 package dev.victorbreno.diaadia.activities
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -9,27 +12,53 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import dev.victorbreno.diaadia.R
+import dev.victorbreno.diaadia.api.RetrofitClient
 import dev.victorbreno.diaadia.data.DiaryProfile
+import dev.victorbreno.diaadia.data.Quote
 import dev.victorbreno.diaadia.data.ReflectionEntry
+import dev.victorbreno.diaadia.fragments.ReflectionListFragment
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.messaging.FirebaseMessaging
+import dev.victorbreno.diaadia.notifications.ReminderWorker
+import dev.victorbreno.diaadia.services.AnalyticsService
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
 import dev.victorbreno.diaadia.services.GoogleAuthHelper
 import dev.victorbreno.diaadia.services.LocalStorageService
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseConfiguration.getFirebaseAuth()
     private val firebaseDatabase = FirebaseConfiguration.getFirebaseDatabase()
     private lateinit var greetingText: TextView
     private lateinit var dateText: TextView
-    private lateinit var reflectionListLayout: LinearLayout
-    private lateinit var reflectionTitleText: TextView
+    private lateinit var reflectionListFragment: ReflectionListFragment
+    private lateinit var cardQuote: LinearLayout
+    private lateinit var textQuote: TextView
+    private lateinit var textQuoteAuthor: TextView
+    private lateinit var adViewBanner: AdView
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* granted or not, we schedule the worker anyway */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,12 +76,30 @@ class MainActivity : AppCompatActivity() {
 
         greetingText = findViewById(R.id.textGreeting)
         dateText = findViewById(R.id.textDate)
-        reflectionListLayout = findViewById(R.id.layoutReflectionList)
-        reflectionTitleText = findViewById(R.id.textReflectionDate)
-        reflectionTitleText.text = getString(R.string.home_reflections_title)
+        cardQuote = findViewById(R.id.cardQuote)
+        textQuote = findViewById(R.id.textQuote)
+        textQuoteAuthor = findViewById(R.id.textQuoteAuthor)
+        reflectionListFragment = supportFragmentManager.findFragmentById(R.id.fragmentReflectionList) as ReflectionListFragment
+        adViewBanner = findViewById(R.id.adViewBanner)
 
         val dateFormat = SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
         dateText.text = dateFormat.format(Date())
+
+        // Firebase Crashlytics
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
+
+        // Firebase Analytics
+        AnalyticsService.init(this)
+        AnalyticsService.logScreenView("home")
+
+        // AdMob
+        MobileAds.initialize(this)
+        adViewBanner.loadAd(AdRequest.Builder().build())
+
+        loadQuoteOfTheDay()
+        requestNotificationPermission()
+        scheduleReminderWorker()
+        subscribeToPushNotifications()
     }
 
     override fun onStart() {
@@ -141,6 +188,18 @@ class MainActivity : AppCompatActivity() {
                         entry.copy(
                             id = entry.id.ifBlank { child.key.orEmpty() },
                             text = text,
+                            photoBase64 = entry.photoBase64.ifBlank {
+                                child.child("photoBase64").getValue(String::class.java).orEmpty()
+                            },
+                            latitude = entry.latitude.takeIf { it != 0.0 }
+                                ?: child.child("latitude").getValue(Double::class.java)
+                                ?: 0.0,
+                            longitude = entry.longitude.takeIf { it != 0.0 }
+                                ?: child.child("longitude").getValue(Double::class.java)
+                                ?: 0.0,
+                            locationName = entry.locationName.ifBlank {
+                                child.child("locationName").getValue(String::class.java).orEmpty()
+                            },
                             createdAt = entry.createdAt.takeIf { it > 0L }
                                 ?: child.child("createdAt").getValue(Long::class.java)
                                 ?: 0L,
@@ -158,116 +217,64 @@ class MainActivity : AppCompatActivity() {
                 LocalStorageService.saveReflections(this, currentUser.uid, reflectionEntries)
 
                 greetingText.text = getString(R.string.home_greeting, displayName)
-                if (reflectionEntries.isNotEmpty()) {
-                    showReflectionEntries(reflectionEntries)
-                } else {
-                    val legacyText = resolvedProfile.dailyReflection.takeIf { it.isNotBlank() }
-                    val legacyDate = resolvedProfile.reflectionDate.takeIf { it.isNotBlank() }.orEmpty()
-                    showLegacyReflection(legacyText, legacyDate)
-                }
+                reflectionListFragment.updateEntries(reflectionEntries)
             }
             .addOnFailureListener {
                 val cachedProfile = LocalStorageService.getProfile(this, currentUser.uid)
                 val cachedReflections = LocalStorageService.getReflections(this, currentUser.uid)
 
-                if (cachedProfile != null || cachedReflections.isNotEmpty()) {
-                    val displayName = cachedProfile?.displayName?.takeIf { it.isNotBlank() }
-                        ?: currentUser.displayName
-                        ?: getString(R.string.home_empty_name)
+                val displayName = cachedProfile?.displayName?.takeIf { it.isNotBlank() }
+                    ?: currentUser.displayName
+                    ?: getString(R.string.home_empty_name)
 
-                    greetingText.text = getString(R.string.home_greeting, displayName)
-                    if (cachedReflections.isNotEmpty()) {
-                        showReflectionEntries(cachedReflections.sortedByDescending { entry -> entry.createdAt })
-                    } else {
-                        showLegacyReflection(
-                            cachedProfile?.dailyReflection,
-                            cachedProfile?.reflectionDate.orEmpty()
-                        )
-                    }
+                greetingText.text = getString(R.string.home_greeting, displayName)
+                reflectionListFragment.updateEntries(cachedReflections.sortedByDescending { entry -> entry.createdAt })
 
-                    Toast.makeText(this, getString(R.string.message_profile_loaded_from_device), Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.message_profile_loaded_from_device), Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun loadQuoteOfTheDay() {
+        RetrofitClient.quoteApi.getQuoteOfTheDay().enqueue(object : Callback<List<Quote>> {
+            override fun onResponse(call: Call<List<Quote>>, response: Response<List<Quote>>) {
+                val quote = response.body()?.firstOrNull() ?: return
+                if (quote.text.isNotBlank()) {
+                    cardQuote.visibility = View.VISIBLE
+                    textQuote.text = "\"${quote.text}\""
+                    textQuoteAuthor.text = "— ${quote.author}"
                 }
             }
+
+            override fun onFailure(call: Call<List<Quote>>, t: Throwable) {
+                // Silently fail - quote is optional
+            }
+        })
     }
 
-    private fun showReflectionEntries(entries: List<ReflectionEntry>) {
-        reflectionListLayout.removeAllViews()
-        entries.forEachIndexed { index, entry ->
-            val itemView = createReflectionItem(entry.formattedDate, entry.text)
-            reflectionListLayout.addView(itemView)
-
-            if (index < entries.lastIndex) {
-                reflectionListLayout.addView(createReflectionDivider())
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }
 
-    private fun showLegacyReflection(text: String?, date: String) {
-        reflectionListLayout.removeAllViews()
-        val content = text ?: getString(R.string.env_default_reflection)
-        reflectionListLayout.addView(createReflectionItem(date, content))
+    private fun scheduleReminderWorker() {
+        val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_reflection_reminder",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
 
-    private fun createReflectionItem(date: String, content: String): LinearLayout {
-        val context = this
-        val container = LinearLayout(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            orientation = LinearLayout.VERTICAL
-        }
-
-        if (date.isNotBlank()) {
-            val dateView = TextView(context).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                text = date
-                textSize = 12f
-                setTextColor(getColor(R.color.journalMuted))
-            }
-            container.addView(dateView)
-        }
-
-        val contentView = TextView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { params ->
-                if (date.isNotBlank()) {
-                    params.topMargin = dpToPx(6)
-                }
-            }
-            text = content
-            textSize = 15f
-            setLineSpacing(dpToPx(6).toFloat(), 1f)
-            setTextColor(getColor(R.color.journalInk))
-            typeface = android.graphics.Typeface.SERIF
-        }
-        container.addView(contentView)
-
-        return container
-    }
-
-    private fun createReflectionDivider(): View {
-        return View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(1)
-            ).also { params ->
-                params.topMargin = dpToPx(14)
-                params.bottomMargin = dpToPx(14)
-            }
-            setBackgroundColor(getColor(R.color.journalDivider))
-        }
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
+    private fun subscribeToPushNotifications() {
+        FirebaseMessaging.getInstance().subscribeToTopic("daily_reflections")
     }
 
     private fun goToLogin() {

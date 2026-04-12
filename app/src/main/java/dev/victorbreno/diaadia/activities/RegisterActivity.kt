@@ -19,6 +19,10 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.UserProfileChangeRequest
 import dev.victorbreno.diaadia.R
 import dev.victorbreno.diaadia.data.DiaryProfile
+import dev.victorbreno.diaadia.fragments.ButtonFragment
+import dev.victorbreno.diaadia.fragments.EmailInputFragment
+import dev.victorbreno.diaadia.fragments.PasswordInputFragment
+import dev.victorbreno.diaadia.services.AnalyticsService
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
 import dev.victorbreno.diaadia.services.GoogleAuthHelper
 import dev.victorbreno.diaadia.services.LocalStorageService
@@ -28,11 +32,13 @@ import dev.victorbreno.diaadia.utils.Validations
 class RegisterActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseConfiguration.getFirebaseAuth()
     private val firebaseDatabase = FirebaseConfiguration.getFirebaseDatabase()
-    private lateinit var emailInput: TextInputEditText
-    private lateinit var passwordInput: TextInputEditText
-    private lateinit var passwordConfirmInput: TextInputEditText
+
     private lateinit var nameInput: TextInputEditText
-    private lateinit var signUpButton: android.widget.Button
+    private lateinit var emailFragment: EmailInputFragment
+    private lateinit var passwordFragment: PasswordInputFragment
+    private lateinit var passwordConfirmFragment: PasswordInputFragment
+    private lateinit var buttonFragment: ButtonFragment
+
     private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data = result.data
         if (data == null) {
@@ -68,6 +74,8 @@ class RegisterActivity : AppCompatActivity() {
                                     dailyReflection = getString(R.string.env_default_reflection)
                                 )
                                 LocalStorageService.saveProfile(this, cachedProfile)
+                                AnalyticsService.init(this)
+                                AnalyticsService.logSignUp("google")
                                 Toast.makeText(this, getString(R.string.message_google_sign_in_success), Toast.LENGTH_SHORT).show()
                                 startActivity(Intent(this, MainActivity::class.java))
                                 finish()
@@ -95,11 +103,19 @@ class RegisterActivity : AppCompatActivity() {
             insets
         }
 
-        emailInput = findViewById(R.id.editTextEmail)
-        passwordInput = findViewById(R.id.editTextPassword)
-        passwordConfirmInput = findViewById(R.id.editTextPasswordConfirm)
         nameInput = findViewById(R.id.editTextName)
-        signUpButton = findViewById(R.id.buttonSignUp)
+        emailFragment = supportFragmentManager.findFragmentById(R.id.fragmentEmail) as EmailInputFragment
+        passwordFragment = supportFragmentManager.findFragmentById(R.id.fragmentPassword) as PasswordInputFragment
+        passwordConfirmFragment = supportFragmentManager.findFragmentById(R.id.fragmentPasswordConfirm) as PasswordInputFragment
+
+        buttonFragment = supportFragmentManager.findFragmentById(R.id.fragmentButtonSignUp) as ButtonFragment
+        buttonFragment.setText(getString(R.string.register))
+        buttonFragment.setOnClickListener { signUp() }
+
+        // Definir hint diferente para o campo de confirmação de senha
+        passwordConfirmFragment.view?.post {
+            passwordConfirmFragment.getEditText().hint = getString(R.string.password_confirm)
+        }
     }
 
     override fun onStart() {
@@ -118,18 +134,21 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun setLoadingState(isLoading: Boolean) {
-        signUpButton.isEnabled = !isLoading
-        signUpButton.text = if (isLoading) "Carregando..." else getString(R.string.register)
+        buttonFragment.setEnabled(!isLoading)
+        buttonFragment.setText(if (isLoading) "Carregando..." else getString(R.string.register))
     }
 
-    fun signUp(view: View) {
+    private fun signUp() {
+        val emailInput = emailFragment.getEditText()
+        val passwordInput = passwordFragment.getEditText()
+        val passwordConfirmInput = passwordConfirmFragment.getEditText()
+
         if (!Validations.validateUserInputs(this, emailInput, passwordInput, passwordConfirmInput, nameInput)) return
 
-        view.isEnabled = false
         setLoadingState(true)
 
-        val email = emailInput.text.toString().trim()
-        val password = passwordInput.text.toString()
+        val email = emailFragment.getEmail()
+        val password = passwordFragment.getPassword()
         val displayName = nameInput.text.toString().trim()
         val usersPath = getString(R.string.firebase_database_users_path)
 
@@ -148,7 +167,6 @@ class RegisterActivity : AppCompatActivity() {
                     user.updateProfile(profileUpdates).addOnCompleteListener updateProfileListener@{ updateProfileTask ->
                         if (!updateProfileTask.isSuccessful) {
                             setLoadingState(false)
-                            view.isEnabled = true
                             Toast.makeText(this@RegisterActivity, getString(R.string.message_register_error), Toast.LENGTH_SHORT).show()
                             return@updateProfileListener
                         }
@@ -164,9 +182,10 @@ class RegisterActivity : AppCompatActivity() {
                         firebaseDatabase.child(usersPath).child(user.uid).setValue(profile)
                             .addOnCompleteListener { dbTask ->
                                 setLoadingState(false)
-                                view.isEnabled = true
                                 if (dbTask.isSuccessful) {
                                     LocalStorageService.saveProfile(this@RegisterActivity, profile)
+                                    AnalyticsService.init(this@RegisterActivity)
+                                    AnalyticsService.logSignUp("email")
                                     Toast.makeText(this@RegisterActivity, getString(R.string.message_register_success), Toast.LENGTH_SHORT).show()
                                     startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
                                     finish()
@@ -177,7 +196,6 @@ class RegisterActivity : AppCompatActivity() {
                     }
                 } else {
                     setLoadingState(false)
-                    view.isEnabled = true
                     val errorMessage = when (task.exception) {
                         is FirebaseAuthWeakPasswordException -> getString(R.string.error_password_should_be_at_least_6_characters)
                         is FirebaseAuthInvalidCredentialsException -> getString(R.string.error_email_not_valid)

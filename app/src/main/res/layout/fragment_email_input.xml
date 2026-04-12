@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/InputOutlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:startIconDrawable="@drawable/ic_email_24"
+    app:startIconTint="@color/journalMuted">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editTextEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/email"
+        android:inputType="textEmailAddress"
+        android:textColor="@color/journalInk" />
+</com.google.android.material.textfield.TextInputLayout>

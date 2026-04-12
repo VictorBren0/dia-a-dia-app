@@ -30,10 +30,124 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
+                <!-- Seção: Foto -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="SUA REFLEXÃO"
+                    android:text="@string/reflection_photo_label"
+                    android:textColor="@color/journalMuted"
+                    android:textSize="12sp"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_photo_placeholder"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:id="@+id/framePhoto"
+                    android:contentDescription="@string/reflection_photo_hint">
+
+                    <ImageView
+                        android:id="@+id/imagePreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        android:contentDescription="@string/reflection_photo_hint" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutPhotoPlaceholder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_camera_24"
+                            android:contentDescription="@null"
+                            app:tint="@color/journalMuted" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/reflection_photo_hint"
+                            android:textColor="@color/journalMuted"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <!-- Divisor -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@color/journalDivider" />
+
+                <!-- Seção: Localização -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reflection_location_label"
+                    android:textColor="@color/journalMuted"
+                    android:textSize="12sp"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_location_24"
+                        app:tint="@color/journalMuted"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/textLocation"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="@string/reflection_location_loading"
+                        android:textColor="@color/journalInk"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:id="@+id/btnRefreshLocation"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reflection_location_refresh"
+                        android:textColor="@color/colorAccent"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Divisor -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@color/journalDivider" />
+
+                <!-- Seção: Reflexão (Texto) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reflection_text_label"
                     android:textColor="@color/journalMuted"
                     android:textSize="12sp"
                     android:textAllCaps="true"
@@ -57,6 +171,7 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
+                    android:id="@+id/btnSave"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
@@ -64,7 +179,7 @@
                     android:onClick="saveReflection"
                     android:paddingTop="14dp"
                     android:paddingBottom="14dp"
-                    android:text="Salvar Reflexão"
+                    android:text="@string/reflection_save_button"
                     android:textColor="@color/white"
                     android:textSize="16sp" />
             </LinearLayout>

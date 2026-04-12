@@ -11,11 +11,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import dev.victorbreno.diaadia.R
+import dev.victorbreno.diaadia.fragments.ButtonFragment
+import dev.victorbreno.diaadia.fragments.EmailInputFragment
+import dev.victorbreno.diaadia.fragments.PasswordInputFragment
+import dev.victorbreno.diaadia.services.AnalyticsService
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
 import dev.victorbreno.diaadia.services.GoogleAuthHelper
 import dev.victorbreno.diaadia.services.LocalStorageService
@@ -24,8 +27,11 @@ import dev.victorbreno.diaadia.utils.Validations
 @Suppress("DEPRECATION")
 class LoginActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseConfiguration.getFirebaseAuth()
-    private lateinit var emailInput: TextInputEditText
-    private lateinit var passwordInput: TextInputEditText
+
+    private lateinit var emailFragment: EmailInputFragment
+    private lateinit var passwordFragment: PasswordInputFragment
+    private lateinit var buttonFragment: ButtonFragment
+
     private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data = result.data
         if (data == null) {
@@ -59,6 +65,8 @@ class LoginActivity : AppCompatActivity() {
                                     user.displayName.orEmpty(),
                                     user.email.orEmpty()
                                 )
+                                AnalyticsService.init(this)
+                                AnalyticsService.logLogin("google")
                                 Toast.makeText(this, getString(R.string.message_google_sign_in_success), Toast.LENGTH_SHORT).show()
                                 startActivity(Intent(this, MainActivity::class.java))
                                 finish()
@@ -86,8 +94,12 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
-        emailInput = findViewById(R.id.editTextEmail)
-        passwordInput = findViewById(R.id.editTextPassword)
+        emailFragment = supportFragmentManager.findFragmentById(R.id.fragmentEmail) as EmailInputFragment
+        passwordFragment = supportFragmentManager.findFragmentById(R.id.fragmentPassword) as PasswordInputFragment
+        buttonFragment = supportFragmentManager.findFragmentById(R.id.fragmentButtonSignIn) as ButtonFragment
+
+        buttonFragment.setText(getString(R.string.login))
+        buttonFragment.setOnClickListener { signIn() }
     }
 
     override fun onStart() {
@@ -105,13 +117,16 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    fun signIn(view: View) {
+    private fun signIn() {
+        val emailInput = emailFragment.getEditText()
+        val passwordInput = passwordFragment.getEditText()
+
         if (!Validations.validateUserInputs(this, emailInput, passwordInput)) return
 
-        view.isEnabled = false
+        buttonFragment.setEnabled(false)
 
-        val email = emailInput.text.toString().trim()
-        val password = passwordInput.text.toString()
+        val email = emailFragment.getEmail()
+        val password = passwordFragment.getPassword()
 
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
@@ -125,11 +140,13 @@ class LoginActivity : AppCompatActivity() {
                             currentUser.email.orEmpty()
                         )
                     }
+                    AnalyticsService.init(this)
+                    AnalyticsService.logLogin("email")
                     Toast.makeText(this, getString(R.string.message_login_success), Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 } else {
-                    view.isEnabled = true
+                    buttonFragment.setEnabled(true)
                     val errorMessage = when (task.exception) {
                         is FirebaseAuthInvalidCredentialsException,
                         is FirebaseAuthInvalidUserException -> getString(R.string.error_email_not_valid)
@@ -142,9 +159,9 @@ class LoginActivity : AppCompatActivity() {
 
     fun forgotPassword(view: View) {
         view.isEnabled = false
-        val email = emailInput.text?.toString()?.trim().orEmpty()
+        val email = emailFragment.getEmail()
         if (email.isBlank()) {
-            emailInput.error = getString(R.string.message_invalid_email_for_reset)
+            emailFragment.setError(getString(R.string.message_invalid_email_for_reset))
             view.isEnabled = true
             return
         }

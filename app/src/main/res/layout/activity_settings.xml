@@ -34,20 +34,40 @@
                 android:paddingEnd="24dp"
                 android:paddingBottom="28dp">
 
-                <!-- Avatar placeholder circular -->
-                <LinearLayout
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/bg_icon_circle"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                <!-- Avatar clicável -->
+                <FrameLayout
+                    android:id="@+id/frameAvatar"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/imageAvatar"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
                         android:src="@drawable/ic_person_24"
-                        android:contentDescription="@null" />
-                </LinearLayout>
+                        app:civ_border_width="2dp"
+                        app:civ_border_color="@color/journalHighlight" />
+
+                    <!-- Badge de câmera -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="bottom|end"
+                        android:background="@drawable/bg_icon_circle"
+                        android:padding="4dp"
+                        android:src="@drawable/ic_camera_24"
+                        android:contentDescription="@string/settings_change_photo" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/settings_change_photo"
+                    android:textColor="@color/journalHighlight"
+                    android:textSize="12sp" />
 
                 <!-- E-mail (somente leitura) -->
                 <TextView

@@ -1,28 +1,78 @@
 package dev.victorbreno.diaadia.activities
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Base64
 import android.view.MenuItem
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.storage.FirebaseStorage
+import de.hdodenhof.circleimageview.CircleImageView
 import dev.victorbreno.diaadia.R
 import dev.victorbreno.diaadia.data.DiaryProfile
+import dev.victorbreno.diaadia.services.AnalyticsService
 import dev.victorbreno.diaadia.services.FirebaseConfiguration
 import dev.victorbreno.diaadia.services.LocalStorageService
+import java.io.ByteArrayOutputStream
 
 class SettingsActivity : AppCompatActivity() {
     private val firebaseAuth = FirebaseConfiguration.getFirebaseAuth()
     private val firebaseDatabase = FirebaseConfiguration.getFirebaseDatabase()
+    private val firebaseStorage = FirebaseStorage.getInstance()
+
     private lateinit var emailText: TextView
     private lateinit var nameInput: TextInputEditText
+    private lateinit var imageAvatar: CircleImageView
+    private lateinit var frameAvatar: FrameLayout
     private lateinit var currentProfile: DiaryProfile
+
+    private var coverPhotoBase64: String = ""
+
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            setAvatarBitmap(bitmap)
+        }
+    }
+
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val inputStream = contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream?.close()
+            if (bitmap != null) {
+                setAvatarBitmap(bitmap)
+            }
+        }
+    }
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(this, getString(R.string.reflection_camera_denied), Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +91,11 @@ class SettingsActivity : AppCompatActivity() {
 
         emailText = findViewById(R.id.textProfileEmailValue)
         nameInput = findViewById(R.id.editTextName)
+        imageAvatar = findViewById(R.id.imageAvatar)
+        frameAvatar = findViewById(R.id.frameAvatar)
         currentProfile = DiaryProfile()
+
+        frameAvatar.setOnClickListener { showPhotoPickerDialog() }
     }
 
     override fun onStart() {
@@ -50,7 +104,6 @@ class SettingsActivity : AppCompatActivity() {
             goToLogin()
             return
         }
-
         loadProfile()
     }
 
@@ -64,6 +117,54 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun showPhotoPickerDialog() {
+        val options = arrayOf(
+            getString(R.string.reflection_photo_camera),
+            getString(R.string.reflection_photo_gallery)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.settings_change_photo))
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> openCamera()
+                    1 -> galleryLauncher.launch("image/*")
+                }
+            }
+            .show()
+    }
+
+    private fun openCamera() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            cameraLauncher.launch(null)
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun setAvatarBitmap(bitmap: Bitmap) {
+        val size = 400
+        val scaled = Bitmap.createScaledBitmap(bitmap, size, size * bitmap.height / bitmap.width, true)
+        val outputStream = ByteArrayOutputStream()
+        scaled.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        coverPhotoBase64 = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT)
+
+        imageAvatar.setImageBitmap(scaled)
+    }
+
+    private fun loadAvatarFromBase64(base64: String) {
+        if (base64.isBlank()) return
+        try {
+            val bytes = Base64.decode(base64, Base64.DEFAULT)
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            if (bitmap != null) {
+                imageAvatar.setImageBitmap(bitmap)
+                coverPhotoBase64 = base64
+            }
+        } catch (_: Exception) { }
+    }
+
     fun saveProfile(view: View) {
         val currentUser = firebaseAuth.currentUser
         if (currentUser == null) {
@@ -75,24 +176,59 @@ class SettingsActivity : AppCompatActivity() {
         view.isEnabled = false
 
         val name = nameInput.text?.toString()?.trim().orEmpty()
-
         if (name.isBlank()) {
             nameInput.error = getString(R.string.error_name_required)
             view.isEnabled = true
             return
         }
 
+        if (coverPhotoBase64.isNotBlank()) {
+            uploadPhotoAndSaveProfile(view, name, currentUser.uid)
+        } else {
+            saveProfileToFirebase(view, name, currentUser.uid, currentProfile.photoUrl)
+        }
+    }
+
+    private fun uploadPhotoAndSaveProfile(view: View, name: String, uid: String) {
+        val imageBytes = Base64.decode(coverPhotoBase64, Base64.DEFAULT)
+        val storageRef = firebaseStorage.reference
+            .child("profile_photos")
+            .child("$uid.jpg")
+
+        storageRef.putBytes(imageBytes)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    saveProfileToFirebase(view, name, uid, downloadUri.toString())
+                }.addOnFailureListener {
+                    // Storage URL failed, save with base64 only
+                    saveProfileToFirebase(view, name, uid, "")
+                }
+            }
+            .addOnFailureListener {
+                // Upload failed, save profile without storage URL
+                saveProfileToFirebase(view, name, uid, "")
+            }
+    }
+
+    private fun saveProfileToFirebase(view: View, name: String, uid: String, photoUrl: String) {
+        val currentUser = firebaseAuth.currentUser ?: return
+
         val profile = currentProfile.copy(
-            uid = currentUser.uid,
+            uid = uid,
             displayName = name,
-            email = currentUser.email.orEmpty()
+            email = currentUser.email.orEmpty(),
+            photoUrl = photoUrl,
+            coverPhotoBase64 = coverPhotoBase64
         )
 
         val usersPath = getString(R.string.firebase_database_users_path)
-        firebaseDatabase.child(usersPath).child(currentUser.uid).setValue(profile)
+        firebaseDatabase.child(usersPath).child(uid).setValue(profile)
             .addOnSuccessListener {
                 view.isEnabled = true
                 LocalStorageService.saveProfile(this, profile)
+                AnalyticsService.init(this)
+                AnalyticsService.logProfileUpdated()
+                if (coverPhotoBase64.isNotBlank()) AnalyticsService.logProfilePhotoChanged()
                 Toast.makeText(this, getString(R.string.message_profile_saved), Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
@@ -114,6 +250,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (profile != null) {
                     currentProfile = profile
                     LocalStorageService.saveProfile(this, profile)
+                    loadAvatarFromBase64(profile.coverPhotoBase64)
                 }
                 nameInput.setText(profile?.displayName ?: currentUser.displayName.orEmpty())
             }
@@ -123,6 +260,7 @@ class SettingsActivity : AppCompatActivity() {
                     currentProfile = cachedProfile
                     emailText.text = cachedProfile.email.ifBlank { currentUser.email.orEmpty() }
                     nameInput.setText(cachedProfile.displayName)
+                    loadAvatarFromBase64(cachedProfile.coverPhotoBase64)
                     Toast.makeText(this, getString(R.string.message_profile_loaded_from_device), Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, getString(R.string.message_profile_load_error), Toast.LENGTH_SHORT).show()

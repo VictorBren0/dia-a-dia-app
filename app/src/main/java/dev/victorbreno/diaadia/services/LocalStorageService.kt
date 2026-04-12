@@ -13,11 +13,17 @@ object LocalStorageService {
     private const val KEY_DISPLAY_NAME = "displayName"
     private const val KEY_EMAIL = "email"
     private const val KEY_PHONE = "phone"
+    private const val KEY_PHOTO_URL = "photoUrl"
+    private const val KEY_COVER_PHOTO_BASE64 = "coverPhotoBase64"
     private const val KEY_TODAY_FOCUS = "todayFocus"
     private const val KEY_DAILY_REFLECTION = "dailyReflection"
     private const val KEY_REFLECTION_DATE = "reflectionDate"
     private const val KEY_ID = "id"
     private const val KEY_TEXT = "text"
+    private const val KEY_PHOTO_BASE64 = "photoBase64"
+    private const val KEY_LATITUDE = "latitude"
+    private const val KEY_LONGITUDE = "longitude"
+    private const val KEY_LOCATION_NAME = "locationName"
     private const val KEY_CREATED_AT = "createdAt"
     private const val KEY_FORMATTED_DATE = "formattedDate"
 
@@ -118,6 +124,8 @@ object LocalStorageService {
             .put(KEY_DISPLAY_NAME, profile.displayName)
             .put(KEY_EMAIL, profile.email)
             .put(KEY_PHONE, profile.phone)
+            .put(KEY_PHOTO_URL, profile.photoUrl)
+            .put(KEY_COVER_PHOTO_BASE64, profile.coverPhotoBase64)
             .put(KEY_TODAY_FOCUS, profile.todayFocus)
             .put(KEY_DAILY_REFLECTION, profile.dailyReflection)
             .put(KEY_REFLECTION_DATE, profile.reflectionDate)
@@ -129,6 +137,8 @@ object LocalStorageService {
             displayName = json.optString(KEY_DISPLAY_NAME),
             email = json.optString(KEY_EMAIL),
             phone = json.optString(KEY_PHONE),
+            photoUrl = json.optString(KEY_PHOTO_URL),
+            coverPhotoBase64 = json.optString(KEY_COVER_PHOTO_BASE64),
             todayFocus = json.optString(KEY_TODAY_FOCUS),
             dailyReflection = json.optString(KEY_DAILY_REFLECTION),
             reflectionDate = json.optString(KEY_REFLECTION_DATE)
@@ -139,6 +149,10 @@ object LocalStorageService {
         return JSONObject()
             .put(KEY_ID, entry.id)
             .put(KEY_TEXT, entry.text)
+            .put(KEY_PHOTO_BASE64, entry.photoBase64)
+            .put(KEY_LATITUDE, entry.latitude)
+            .put(KEY_LONGITUDE, entry.longitude)
+            .put(KEY_LOCATION_NAME, entry.locationName)
             .put(KEY_CREATED_AT, entry.createdAt)
             .put(KEY_FORMATTED_DATE, entry.formattedDate)
     }
@@ -147,6 +161,10 @@ object LocalStorageService {
         return ReflectionEntry(
             id = json.optString(KEY_ID),
             text = json.optString(KEY_TEXT),
+            photoBase64 = json.optString(KEY_PHOTO_BASE64),
+            latitude = json.optDouble(KEY_LATITUDE, 0.0),
+            longitude = json.optDouble(KEY_LONGITUDE, 0.0),
+            locationName = json.optString(KEY_LOCATION_NAME),
             createdAt = json.optLong(KEY_CREATED_AT),
             formattedDate = json.optString(KEY_FORMATTED_DATE)
         )

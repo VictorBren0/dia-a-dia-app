@@ -68,42 +68,21 @@
                 android:textColor="@color/journalMuted"
                 android:textSize="13sp" />
 
-            <!-- Campo e-mail -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/InputOutlined"
+            <!-- Fragment e-mail -->
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragmentEmail"
+                android:name="dev.victorbreno.diaadia.fragments.EmailInputFragment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:startIconDrawable="@drawable/ic_email_24"
-                app:startIconTint="@color/journalMuted">
+                android:layout_marginTop="24dp" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextEmail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/email"
-                    android:inputType="textEmailAddress"
-                    android:textColor="@color/journalInk" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Campo senha -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/InputOutlined"
+            <!-- Fragment senha -->
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragmentPassword"
+                android:name="dev.victorbreno.diaadia.fragments.PasswordInputFragment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                app:startIconDrawable="@drawable/ic_lock_24"
-                app:startIconTint="@color/journalMuted"
-                app:endIconMode="password_toggle">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextPassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/password"
-                    android:inputType="textPassword"
-                    android:textColor="@color/journalInk" />
-            </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginTop="14dp" />
 
             <!-- Esqueci minha senha -->
             <TextView
@@ -117,19 +96,13 @@
                 android:textColor="@color/colorPrimary"
                 android:textSize="13sp" />
 
-            <!-- Botão Entrar -->
-            <Button
-                android:id="@+id/buttonSignIn"
+            <!-- Fragment botão entrar -->
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragmentButtonSignIn"
+                android:name="dev.victorbreno.diaadia.fragments.ButtonFragment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:backgroundTint="@color/colorAccent"
-                android:onClick="signIn"
-                android:paddingTop="14dp"
-                android:paddingBottom="14dp"
-                android:text="@string/login"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
+                android:layout_marginTop="22dp" />
 
             <Button
                 android:id="@+id/buttonGoogleSignIn"

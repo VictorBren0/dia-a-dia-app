@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_surface_card"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <!-- Foto da reflexão -->
+    <ImageView
+        android:id="@+id/imageReflection"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:contentDescription="@string/reflection_photo_label"
+        android:background="@drawable/bg_photo_placeholder" />
+
+    <!-- Texto da reflexão -->
+    <TextView
+        android:id="@+id/textReflectionContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:fontFamily="serif"
+        android:lineSpacingExtra="4dp"
+        android:maxLines="3"
+        android:textColor="@color/journalInk"
+        android:textSize="15sp"
+        tools:text="Hoje foi um dia produtivo..." />
+
+    <!-- Linha inferior: localização + data -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/iconLocation"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_location_24"
+            android:visibility="gone"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/textReflectionLocation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/journalMuted"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="São Paulo, SP" />
+
+        <TextView
+            android:id="@+id/textReflectionDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/journalMuted"
+            android:textSize="12sp"
+            tools:text="10/03/2026 às 14:30" />
+    </LinearLayout>
+</LinearLayout>
