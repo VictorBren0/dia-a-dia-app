@@ -61,6 +61,13 @@
     <string name="env_default_focus">Breathe, organize your thoughts and move forward.</string>
     <string name="env_default_reflection">Today is a good day to record small wins.</string>
     <string name="env_app_tagline">Your personal journal with cloud auth and storage.</string>
+    <string name="google_sign_in">Sign in with Google</string>
+    <string name="google_sign_up">Sign up with Google</string>
+    <string name="message_google_sign_in_success">Google sign-in successful.</string>
+    <string name="message_google_sign_in_cancelled">Google sign-in cancelled.</string>
+    <string name="message_google_sign_in_error">Could not authenticate with Google.</string>
+    <string name="message_google_config_missing">Google configuration missing. Update google-services.json after registering SHA-1 in Firebase.</string>
+    <string name="message_reflection_saved_locally">Reflection saved locally. Online sync failed.</string>
     <string name="support_label">Support</string>
     <string name="reflection_photo_label">Photo</string>
     <string name="reflection_photo_hint">Tap to add a photo</string>
