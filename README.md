@@ -8,13 +8,6 @@ Dia a Dia é um aplicativo Android nativo desenvolvido em Kotlin para registrar 
 
 O projeto utiliza Firebase Authentication para login com e-mail/senha e Google, Firebase Realtime Database para persistência remota, Firebase Storage para fotos de perfil, e armazenamento local em SharedPreferences para manter sessão, perfil e reflexões mesmo offline.
 
-<img width="331" height="651" alt="image" src="https://github.com/user-attachments/assets/e6e0ce72-bd14-40d5-8394-3284ef753d2d" />
-<img width="329" height="651" alt="image" src="https://github.com/user-attachments/assets/242ecf55-1070-4cfe-b7c3-3c5fdbddc5eb" />
-<img width="331" height="652" alt="image" src="https://github.com/user-attachments/assets/88a4746c-a058-4e46-87ee-e44644c3cc48" />
-<img width="331" height="665" alt="image" src="https://github.com/user-attachments/assets/78dfb44f-9ce5-41f1-bbab-da2a8710ea3b" />
-<img width="332" height="656" alt="image" src="https://github.com/user-attachments/assets/42e7f2b3-5240-4e78-adc7-528c38ad769a" />
-<img width="327" height="649" alt="image" src="https://github.com/user-attachments/assets/f5e762bf-63ae-4431-a500-76808645dc02" />
-
 ## Sobre o Projeto
 
 O aplicativo foi pensado como um diário pessoal completo, com fluxo direto e interface focada em escrita. Após a autenticação, o usuário acessa uma tela inicial com saudação personalizada, data atual, frase motivacional do dia (via API), e histórico de reflexões registradas com foto e localização. Também é possível editar o perfil com foto, criar e editar reflexões, e receber notificações de lembrete.
